@@ -60,4 +60,19 @@ if err := Ping(); err != nil {
     fmt.Fprintf(os.Stderr, "ping failed: %v; networking disabled\n", err)
 }
 
+文件结尾错误EOF
+io包会产生EOF错误
+
+in := bufio.NewReader(os.Stdin)
+for {
+    r, _, err := in.ReadRune()
+    if err == io.EOF {
+        break // finished reading
+    }
+    if err != nil {
+        return fmt.Errorf("read failed:%v", err)
+    }
+    // ...use r…
+}
+
 
