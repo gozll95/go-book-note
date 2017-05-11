@@ -1,6 +1,25 @@
 package main
 
-import ()
+import (
+	"fmt"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"sync"
+	"time"
+)
+
+//start httpGetBody
+func httpGetBody(url string) (interface{}, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	return ioutil.ReadAll(resp.Body)
+}
+
+//end httpGetBody
 
 //Func是memoize的方法
 type Func func(key string) (interface{}, error)
@@ -68,4 +87,28 @@ func (e *entry) deliver(response chan<- result) {
 	<-e.ready
 	// Send the result to the client.
 	response <- e.res
+}
+
+func main() {
+	incomingURLs := []string{"https://golang.org", "https://godoc.org",
+		"https://play.golang.org", "http://gopl.io",
+		"https://golang.org", "https://godoc.org",
+		"https://play.golang.org", "http://gopl.io"}
+	m := New(httpGetBody)
+
+	var n sync.WaitGroup
+	for _, url := range incomingURLs {
+		n.Add(1)
+		go func(url string) {
+			start := time.Now()
+			value, err := m.Get(url)
+			if err != nil {
+				log.Print(err)
+			}
+			fmt.Printf("%s, %s, %d bytes\n",
+				url, time.Since(start), len(value.([]byte)))
+			n.Done()
+		}(url)
+	}
+	n.Wait()
 }
